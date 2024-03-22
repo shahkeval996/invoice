@@ -3,16 +3,11 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import Modal from "react-bootstrap/Modal";
 import Bill from "./bill";
 import { Button } from "react-bootstrap";
-import { getDatabase, push, ref, set } from "firebase/database";
-import storage from "../../../fireBaseConfig";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
 const InvoiceModal = ({ closeModal, info }) => {
   const billRef = useRef(null);
-
-  const db = getDatabase();
   const shareOnWhatsApp = async () => {
     try {
       const element = billRef.current;
@@ -25,21 +20,38 @@ const InvoiceModal = ({ closeModal, info }) => {
       const pdfHeight = pdf.internal.pageSize.getHeight();
 
       pdf.addImage(data, "PNG", 0, 0, pdfWidth, pdfHeight);
-      const pdfUrl = pdf.output("bloburl");
-
+      const pdfUrl = pdf.output("blob");
+      const blobUrl = URL.createObjectURL(pdfUrl);
+      return blobUrl;
       // const phoneNumber = "2299119900";
-      const whatsappLink = `https://wa.me/8140210375?document=${encodeURIComponent(
-        pdfUrl
-      )}`;
-      console.log(whatsappLink);
-      window.open(whatsappLink, "_blank");
+      // const whatsappLink = `https://wa.me/+918140210375?document=${encodeURIComponent(
+      //   blobUrl
+      // )}`;
+      // console.log(whatsappLink, pdfUrl, blobUrl);
+      // window.open(whatsappLink, "_blank");
 
-      console.log("PDF shared successfully on WhatsApp!");
+      // console.log("PDF shared successfully on WhatsApp!");
     } catch (error) {
       console.error("Error generating or sharing PDF:", error);
     }
   };
 
+  const handleShareWhatsApp = async () => {
+    try {
+      const blobUrl = await shareOnWhatsApp();
+      if (!blobUrl) {
+        console.error("PDF Blob URL is null.");
+        return;
+      }
+
+      const shareUrl = `whatsapp://send?phone=+918140210375&file=https://picsum.photos/id/1/200/300`;
+      window.open(shareUrl, "_blank");
+
+      console.log("PDF shared successfully on WhatsApp!");
+    } catch (error) {
+      console.error("Error sharing PDF on WhatsApp:", error);
+    }
+  };
   return (
     <div>
       <Modal show={info.isOpen} onHide={closeModal} size="lg" centered>
@@ -65,7 +77,7 @@ const InvoiceModal = ({ closeModal, info }) => {
           <Button variant="secondary" onClick={closeModal}>
             Close
           </Button>
-          <Button variant="primary" onClick={shareOnWhatsApp}>
+          <Button variant="primary" onClick={handleShareWhatsApp}>
             Share on WhatsApp
           </Button>
         </Modal.Footer>
